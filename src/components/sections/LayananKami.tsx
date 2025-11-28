@@ -1,108 +1,93 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useState } from "react";
+import { motion, easeOut } from "framer-motion";
 import CardLayanan from "@/components/ui/CardLayanan";
-import { motion, useAnimation, easeOut } from "framer-motion";
+import ModalDaftarLayanan from "@/components/ui/ModalDaftarLayanan";
+import ModalFormLayanan from "@/components/ui/ModalFormLayanan";
+import { layananPerBidang } from "@/data/layanan";
 
-// Import gambar
 import TataUsaha from "@/assets/images/layanan-tatausaha.webp";
 import BimasIslam from "@/assets/images/layanan-bimasislam.webp";
 import BimasKatolik from "@/assets/images/layanan-bimaskatolik.webp";
 import BimasKristen from "@/assets/images/layanan-bimaskristen.webp";
 import BimasHindu from "@/assets/images/layanan-bimashindu.webp";
 import BimasBuddha from "@/assets/images/layanan-bimasbudha.webp";
+import Madrasah from "@/assets/images/layanan-madrasah.webp";
 
-// Data layanan
 const layananData = [
-  {
-    title: "Bagian Tata Usaha",
-    image: TataUsaha,
-    href: "/layanan/tata-usaha",
-  },
-  {
-    title: "Bidang Bimbingan Masyarakat Islam",
-    image: BimasIslam,
-    href: "/layanan/bimas-islam",
-  },
-  {
-    title: "Bimas Katolik",
-    image: BimasKatolik,
-    href: "/layanan/bimas-katolik",
-  },
-  {
-    title: "Bimas Kristen",
-    image: BimasKristen,
-    href: "/layanan/bimas-kristen",
-  },
-  {
-    title: "Bimas Hindu",
-    image: BimasHindu,
-    href: "/layanan/bimas-hindu",
-  },
-  {
-    title: "Bimas Buddha",
-    image: BimasBuddha,
-    href: "/layanan/bimas-buddha",
-  },
+  { title: "Bagian Tata Usaha", slug: "tata-usaha", image: TataUsaha },
+  { title: "Bidang Bimbingan Masyarakat Islam", slug: "bimas-islam", image: BimasIslam },
+  { title: "Bidang Pendidikan Madrasah", slug: "pendidikan-madrasah", image: Madrasah },
+  { title: "Bimas Katolik", slug: "bimas-katolik", image: BimasKatolik },
+  { title: "Bimas Kristen", slug: "bimas-kristen", image: BimasKristen },
+  { title: "Bimas Hindu", slug: "bimas-hindu", image: BimasHindu },
+  { title: "Bimas Buddha", slug: "bimas-buddha", image: BimasBuddha },
 ];
 
+const bidangMap: any = {
+  "tata-usaha": "Bagian Tata Usaha",
+  "bimas-islam": "Bidang Bimbingan Masyarakat Islam",
+  "bimas-katolik": "Bimas Katolik",
+  "bimas-kristen": "Bimas Kristen",
+  "bimas-hindu": "Bimas Hindu",
+  "bimas-buddha": "Bimas Buddha",
+  "pendidikan-madrasah": "Bidang Pendidikan Madrasah",
+};
+
 const LayananKami = () => {
-  const controls = useAnimation();
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
+  const [openForm, setOpenForm] = useState(false);
+  const [selectedLayanan, setSelectedLayanan] = useState("");
 
-  // ✅ Jalankan animasi otomatis bila user datang dari link #layanan
-  useEffect(() => {
-    if (window.location.hash === "#layanan") {
-      controls.start("visible");
-    }
-  }, [controls]);
-
-  const fadeVariants = {
-    hidden: { opacity: 0, y: 40 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.7, ease: easeOut },
-    },
-  };
+  const selectedLayananData =
+    openSlug ? layananPerBidang[bidangMap[openSlug]] : [];
 
   return (
-    <section
-      id="layanan"
-      className="py-16 bg-gray-50 scroll-mt-20"
-      aria-labelledby="layanan-heading"
-    >
-      <div className="max-w-7xl mx-auto px-6">
-        {/* Judul Section */}
-        <motion.h2
-          id="layanan-heading"
-          className="text-3xl md:text-4xl font-bold text-center text-gray-800 mb-12"
-          variants={fadeVariants}
-          initial="hidden"
-          animate={controls}
-          whileInView="visible"
-          viewport={{ once: false, amount: 0.4 }}
-        >
+    <section id="layanan" className="py-12 bg-gray-50 scroll-mt-20">
+      <div className="max-w-7xl mx-auto px-4">
+        
+        <h2 className="text-2xl md:text-4xl font-bold text-center text-gray-800 mb-10">
           LAYANAN KAMI
-        </motion.h2>
+        </h2>
 
-        {/* Grid Card Layanan */}
-        <motion.div
-          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"
-          variants={fadeVariants}
-          initial="hidden"
-          animate={controls}
-          whileInView="visible"
-          viewport={{ once: false, amount: 0.3 }}
+        {/* MOBILE: grid — DESKTOP: horizontal center */}
+        <div
+          className="
+            grid grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4
+            md:flex md:flex-row md:justify-center md:gap-6 md:py-4
+          "
         >
-          {layananData.map((layanan) => (
-            <CardLayanan
-              key={layanan.title}
-              title={layanan.title}
-              image={layanan.image}
-              href={layanan.href}
-            />
+          {layananData.map((item) => (
+            <div key={item.slug} className="flex justify-center">
+              <CardLayanan
+                title={item.title}
+                image={item.image}
+                onClick={() => setOpenSlug(item.slug)}
+              />
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
+
+      {openSlug && !openForm && (
+        <ModalDaftarLayanan
+          title={bidangMap[openSlug]}
+          layanan={selectedLayananData}
+          onClose={() => setOpenSlug(null)}
+          onSelect={(item) => {
+            setSelectedLayanan(item);
+            setOpenForm(true);
+          }}
+        />
+      )}
+
+      {openForm && openSlug && (
+        <ModalFormLayanan
+          bidang={bidangMap[openSlug]}
+          layanan={selectedLayanan}
+          onBack={() => setOpenForm(false)}
+        />
+      )}
     </section>
   );
 };

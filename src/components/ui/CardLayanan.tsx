@@ -1,44 +1,65 @@
 "use client";
+
 import React from "react";
 import Image, { StaticImageData } from "next/image";
-import { motion } from "framer-motion";
 
 type Props = {
   title: string;
   image: string | StaticImageData;
-  href: string;
+  onClick: () => void;
 };
 
-const CardLayanan = ({ title, image, href }: Props) => {
+const CardLayanan = ({ title, image, onClick }: Props) => {
   return (
-    <a
-      href={href}
-      title={title}
-      className="group block rounded-xl overflow-hidden shadow-lg transition-transform duration-300 hover:scale-[1.03]"
-    >
-      <div className="relative h-56 md:h-64 w-full">
+<button
+  onClick={onClick}
+  title={title}
+  className="
+    group shrink-0 relative
+    w-[110px] sm:w-[130px] md:w-[150px]
+    rounded-xl overflow-hidden bg-white shadow-md
+    flex flex-col
+    transition-all duration-500
+    md:hover:scale-[1.03] active:scale-[0.98]
+
+    /* BASE LAYER */
+    before:absolute before:inset-0
+    before:rounded-xl
+    before:border-2 before:border-transparent
+    before:transition-all before:duration-500
+    before:pointer-events-none
+
+    /* HOVER EFFECT */
+    md:hover:before:border-[#d4af37]/80
+    md:hover:before:shadow-[0_0_20px_8px_rgba(212,175,55,0.35)]
+    md:hover:before:blur-[2px]
+
+    /* CLICK EFFECT – lebih kuat & intens */
+    active:before:border-[#d4af37]
+    active:before:shadow-[0_0_28px_12px_rgba(212,175,55,0.5)]
+    active:before:blur-[3px]
+  "
+>
+
+      {/* ICON / IMAGE */}
+      <div className="relative w-full aspect-square">
         <Image
           src={image}
           alt={title}
           fill
-          className="object-cover object-center transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
-          sizes="(max-width: 768px) 100vw, 33vw"
-          priority={false}
+          className="object-cover object-center duration-500 md:group-hover:scale-105"
+          sizes="150px"
         />
       </div>
-      <motion.div
-        className="p-4 bg-white"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.3 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
-      >
-        <h3 className="text-lg font-semibold text-gray-800 group-hover:text-green-700">
+
+      {/* TITLE */}
+      <div className="px-2 py-2 bg-white flex items-center justify-center min-h-[50px]">
+        <h3 className="text-[10px] sm:text-xs md:text-sm font-semibold text-gray-800 text-center leading-tight">
           {title}
         </h3>
-      </motion.div>
-    </a>
+      </div>
+    </button>
   );
 };
 
