@@ -1,53 +1,35 @@
+"use client";
+
 import "./globals.css";
-import type { Metadata } from "next";
-import { ReactNode } from "react";
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import SiennaWidget from "@/components/layout/SiennaWidget";
+import React from "react";
+import { Inter } from "next/font/google";
 
-export const metadata: Metadata = {
-  title: "Kementerian Agama Prov. Sulawesi Barat - GASPUL",
-  description:
-    "Website resmi Gerakan Aktif Sistematis Pelayanan Unggul (GASPUL) - Kementerian Agama Provinsi Sulawesi Barat.",
-  keywords: [
-    "Kementerian Agama Sulawesi Barat",
-    "GASPUL",
-    "Pelayanan Publik Kemenag",
-    "Kemenag Sulbar",
-    "Layanan Keagamaan",
-  ],
-  authors: [{ name: "Kementerian Agama Provinsi Sulawesi Barat" }],
-  openGraph: {
-    title: "GASPUL",
-    description:
-      "Gerakan Aktif Sistematis Pelayanan Unggul (GASPUL) dari Kementerian Agama Provinsi Sulawesi Barat.",
-    url: "https://gaspul.kemenagsulbar.go.id",
-    siteName: "GASPUL - Kemenag Sulbar",
-    locale: "id_ID",
-    type: "website",
-    images: [
-      {
-        url: "/assets/images/logo-gaspul.png",
-        width: 512,
-        height: 512,
-        alt: "Logo GASPUL",
-      },
-    ],
-  },
-  icons: {
-    icon: "/assets/images/logo-gaspul.ico",
-    shortcut: "/assets/images/logo-gaspul.ico",
-    apple: "/assets/images/logo-gaspul.ico",
-  },
-};
+const inter = Inter({ subsets: ["latin"] });
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className="scroll-smooth">
-      <body className="flex flex-col min-h-screen bg-white text-gray-900">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <SiennaWidget />
+    <html lang="en">
+      <body className={`${inter.className} bg-white`}>
+        {/* WRAPPER UTAMA */}
+        <div className="flex flex-col min-h-screen">
+          
+          {/* HEADER (jika ada) */}
+          {/* <Header /> */}
+
+          {/* ISI HALAMAN */}
+          <main className="flex-1 w-full bg-white">
+            {children}
+          </main>
+
+          {/* FOOTER — Pastikan hanya render jika tidak di-hide */}
+          {/* 
+          {showFooter && (
+            <footer className="bg-gray-100 py-6 border-t">
+              <Footer />
+            </footer>
+          )}
+          */}
+        </div>
       </body>
     </html>
   );

@@ -280,24 +280,30 @@ function handleFiles(selected: FileList | null) {
                 className="hidden"
               />
 
-              {/* dropzone */}
-              <div
-                className="mt-2 border-2 border-dashed border-gray-400 rounded-xl p-6 text-center text-gray-600 cursor-pointer hover:border-blue-500 transition"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  handleFiles(e.dataTransfer.files);
-                }}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <div className="flex flex-col items-center gap-2">
-                  <Upload size={30} className="opacity-60" />
-                  <p className="text-sm">
-                    Drop files here or <span className="text-blue-600">click to upload</span>
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">Maks per-file: {(MAX_FILE_SIZE / 1024 / 1024).toFixed(0)} MB</p>
-                </div>
-              </div>
+{/* dropzone */}
+<div
+  className="mt-2 border-2 border-dashed border-gray-400 rounded-xl p-6 text-center text-gray-600 cursor-pointer hover:border-blue-500 transition"
+  onDragOver={(e) => e.preventDefault()}
+  onDrop={(e) => {
+    e.preventDefault();
+    handleFiles(e.dataTransfer.files);
+  }}
+  onClick={() => fileInputRef.current?.click()}
+>
+  <div className="flex flex-col items-center gap-2">
+    <Upload size={30} className="opacity-60" />
+    <p className="text-sm">
+      Drop files here or <span className="text-blue-600">click to upload</span>
+    </p>
+    <p className="text-xs text-gray-500 mt-1">
+      Maks per-file: {(MAX_FILE_SIZE / 1024 / 1024).toFixed(0)} MB
+    </p>
+    <p className="text-xs text-red-500 mt-1">
+      Hanya file PDF yang dapat diupload
+    </p>
+  </div>
+</div>
+
 
               {/* file error */}
               {fileError && (

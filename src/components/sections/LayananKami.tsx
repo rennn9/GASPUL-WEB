@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { motion, easeOut } from "framer-motion";
+import { motion } from "framer-motion";
 import CardLayanan from "@/components/ui/CardLayanan";
 import ModalDaftarLayanan from "@/components/ui/ModalDaftarLayanan";
 import ModalFormLayanan from "@/components/ui/ModalFormLayanan";
@@ -44,31 +44,38 @@ const LayananKami = () => {
 
   return (
     <section id="layanan" className="py-12 bg-gray-50 scroll-mt-20">
-      <div className="max-w-7xl mx-auto px-4">
-        
+      <div className="max-w-5xl mx-auto px-4">
         <h2 className="text-2xl md:text-4xl font-bold text-center text-gray-800 mb-10">
           LAYANAN KAMI
         </h2>
 
-        {/* MOBILE: grid — DESKTOP: horizontal center */}
+        {/* Responsive Grid */}
         <div
           className="
-            grid grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4
-            md:flex md:flex-row md:justify-center md:gap-6 md:py-4
+            grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
+            gap-2 sm:gap-3 md:gap-4
+            justify-center
+            mx-auto
           "
         >
           {layananData.map((item) => (
-            <div key={item.slug} className="flex justify-center">
-              <CardLayanan
-                title={item.title}
-                image={item.image}
-                onClick={() => setOpenSlug(item.slug)}
-              />
-            </div>
+            <motion.div
+              key={item.slug}
+              className="flex justify-center"
+            >
+              <div className="max-w-[140px] sm:max-w-[150px] md:max-w-[160px]">
+                <CardLayanan
+                  title={item.title}
+                  image={item.image}
+                  onClick={() => setOpenSlug(item.slug)}
+                />
+              </div>
+            </motion.div>
           ))}
         </div>
       </div>
 
+      {/* Modal Daftar Layanan */}
       {openSlug && !openForm && (
         <ModalDaftarLayanan
           title={bidangMap[openSlug]}
@@ -81,6 +88,7 @@ const LayananKami = () => {
         />
       )}
 
+      {/* Modal Form */}
       {openForm && openSlug && (
         <ModalFormLayanan
           bidang={bidangMap[openSlug]}
