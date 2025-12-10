@@ -32,17 +32,7 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Navigasi */}
-        <nav className="hidden md:flex space-x-8">
-          {["Beranda", "Layanan", "Berita", "Kontak"].map((item) => (
-            <button
-              key={item}
-              className="text-gray-700 font-medium hover:text-green-700 transition-colors duration-200"
-            >
-              {item}
-            </button>
-          ))}
-        </nav>
+
       </div>
     </header>
   );
