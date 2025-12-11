@@ -97,6 +97,34 @@ export async function cekStatusPengajuan(noReg: string) {
   }
 }
 
+/* ============================================================
+   4. AMBIL STANDAR PELAYANAN
+   ============================================================ */
+export async function getStandarPelayanan(bidang: string, layanan: string) {
+  const url = `${BASE_URL}/standar-pelayanan?bidang=${encodeURIComponent(bidang)}&layanan=${encodeURIComponent(layanan)}`;
+  
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error("Gagal mengambil standar pelayanan:", res.status, res.statusText);
+      return null;
+    }
+
+    const data = await res.json();
+    // data = { exists: boolean, url: string | null }
+    if (data.exists) return data.url;
+    return null;
+  } catch (err) {
+    console.error("Error getStandarPelayanan:", err);
+    return null;
+  }
+}
+
 
 // // src/lib/apiLayanan.ts
 // const BASE_URL = "http://192.168.1.5:8000/api";
