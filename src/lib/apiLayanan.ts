@@ -102,7 +102,7 @@ export async function cekStatusPengajuan(noReg: string) {
    ============================================================ */
 export async function getStandarPelayanan(bidang: string, layanan: string) {
   const url = `${BASE_URL}/standar-pelayanan?bidang=${encodeURIComponent(bidang)}&layanan=${encodeURIComponent(layanan)}`;
-  
+
   try {
     const res = await fetch(url, {
       method: "GET",
@@ -122,6 +122,56 @@ export async function getStandarPelayanan(bidang: string, layanan: string) {
   } catch (err) {
     console.error("Error getStandarPelayanan:", err);
     return null;
+  }
+}
+
+/* ============================================================
+   5. SUBMIT SURVEY
+   ============================================================ */
+export async function submitSurvey(surveyData: {
+  layanan_publik_id: number;
+  nama_responden: string;
+  bidang: string;
+  no_hp_wa?: string;
+  usia: number;
+  jenis_kelamin: string;
+  pendidikan: string;
+  pekerjaan: string;
+  tanggal: string;
+  jawaban: string[];
+  saran?: string;
+}) {
+  const url = `${BASE_URL}/survey`;
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(surveyData),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return {
+        success: false,
+        message: data.message || "Gagal mengirim survey",
+      };
+    }
+
+    return {
+      success: true,
+      data: data.data,
+    };
+  } catch (err) {
+    console.error("Error submitSurvey:", err);
+    return {
+      success: false,
+      message: "Terjadi kesalahan jaringan",
+    };
   }
 }
 

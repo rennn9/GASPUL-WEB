@@ -40,6 +40,15 @@ export default function CekStatus() {
     }
   };
 
+  const handleRefreshStatus = async () => {
+    if (resultData?.info?.no_registrasi) {
+      const res = await cekStatusPengajuan(resultData.info.no_registrasi);
+      if (res.success) {
+        setResultData(res.data);
+      }
+    }
+  };
+
   return (
     <section className="py-20 relative overflow-hidden">
       {/* Background & Glow */}
@@ -103,6 +112,7 @@ export default function CekStatus() {
         open={modalOpen}
         data={resultData || undefined}
         onClose={() => setModalOpen(false)}
+        onRefresh={handleRefreshStatus}
       />
     </section>
   );

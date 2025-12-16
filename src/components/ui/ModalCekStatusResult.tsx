@@ -1,7 +1,8 @@
 "use client";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { X } from "lucide-react";
+import ModalSurvey from "./ModalSurvey";
 
 type StatusEntry = {
   id: number;
@@ -15,6 +16,7 @@ interface ResultProps {
   error?: string | null;
   data?: any;
   onClose: () => void;
+  onRefresh?: () => void;
 }
 
 const badgeColor = (status?: string) => {
@@ -35,8 +37,11 @@ export default function ModalCekStatusResult({
   error,
   data,
   onClose,
+  onRefresh,
 }: ResultProps) {
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
+  const [surveyData, setSurveyData] = useState<any>(null);
 
   /* Lock body scroll */
   useEffect(() => {
@@ -139,7 +144,25 @@ export default function ModalCekStatusResult({
                 </div>
 
                 <div className="rounded-xl p-4 border border-white/50 bg-white/50 backdrop-blur shadow">
-                  <p className="text-xs text-gray-700">No Registrasi</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs text-gray-700">No Registrasi</p>
+                    {data.has_filled_survey && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-xs font-medium">
+                        <svg
+                          className="w-3 h-3"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Survey Terisi
+                      </span>
+                    )}
+                  </div>
                   <p className="font-semibold text-gray-900">
                     {data.info?.no_registrasi}
                   </p>
@@ -203,14 +226,45 @@ export default function ModalCekStatusResult({
                   </p>
 
                   {data?.surat_balasan_url ? (
-                    <a
-                      href={data.surat_balasan_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-blue-900 underline font-semibold mt-1 inline-block"
-                    >
-                      Lihat Surat Balasan
-                    </a>
+                    <>
+                      {data.has_filled_survey ? (
+                        // Survey completed → enabled link
+                        <a
+                          href={data.surat_balasan_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-900 underline font-semibold mt-1 inline-block"
+                        >
+                          Lihat Surat Balasan
+                        </a>
+                      ) : (
+                        // Survey NOT completed → disabled + button
+                        <div className="space-y-2 mt-1">
+                          <p className="text-sm text-gray-600 italic">
+                            Surat balasan tersedia
+                          </p>
+                          <button
+                            onClick={() => {
+                              setSurveyData({
+                                id: data.info.id,
+                                nama: data.info.nama,
+                                bidang: data.info.bidang,
+                                telepon: data.info.telepon,
+                              });
+                              setShowSurveyModal(true);
+                            }}
+                            className="
+                              px-4 py-2 rounded-lg
+                              bg-green-600 hover:bg-green-700
+                              text-white text-sm font-semibold
+                              transition
+                            "
+                          >
+                            Isi Survey Untuk Akses Surat
+                          </button>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm text-gray-800 mt-1">
                       Tidak ada surat balasan
@@ -258,6 +312,18 @@ export default function ModalCekStatusResult({
           )}
         </div>
       </motion.div>
+
+      {/* SURVEY MODAL */}
+      <ModalSurvey
+        open={showSurveyModal}
+        layananData={surveyData}
+        onClose={() => setShowSurveyModal(false)}
+        onSuccess={() => {
+          if (onRefresh) {
+            onRefresh();
+          }
+        }}
+      />
     </motion.div>
   );
 }
