@@ -126,9 +126,58 @@ export async function getStandarPelayanan(bidang: string, layanan: string) {
 }
 
 /* ============================================================
-   5. SUBMIT SURVEY
+   5. GET SURVEY QUESTIONS (DYNAMIC)
+   ============================================================ */
+export async function getSurveyQuestions(templateId?: number) {
+  let url = `${BASE_URL}/survey/questions`;
+  if (templateId) {
+    url += `?template_id=${templateId}`;
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error("Failed to fetch survey questions:", res.status, res.statusText);
+      return {
+        success: false,
+        message: "Gagal memuat pertanyaan survey",
+      };
+    }
+
+    const data = await res.json();
+    return {
+      success: data.success,
+      data: data.data,
+      message: data.message,
+    };
+  } catch (err) {
+    console.error("Error getSurveyQuestions:", err);
+    return {
+      success: false,
+      message: "Terjadi kesalahan jaringan",
+    };
+  }
+}
+
+/* ============================================================
+   6. SUBMIT SURVEY (NEW FORMAT - supports both legacy and template-based)
    ============================================================ */
 export async function submitSurvey(surveyData: {
+  // Template-based format (NEW)
+  survey_template_id?: number;
+  responses?: Array<{
+    question_id: number;
+    option_id?: number;
+    text_answer?: string;
+    poin?: number;
+  }>;
+
+  // Common fields
   layanan_publik_id: number;
   nama_responden: string;
   bidang: string;
@@ -138,8 +187,10 @@ export async function submitSurvey(surveyData: {
   pendidikan: string;
   pekerjaan: string;
   tanggal: string;
-  jawaban: string[];
   saran?: string;
+
+  // Legacy format (OLD - for backward compatibility)
+  jawaban?: any;
 }) {
   const url = `${BASE_URL}/survey`;
 

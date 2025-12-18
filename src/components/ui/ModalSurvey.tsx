@@ -2,55 +2,37 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { X, CheckCircle2, AlertCircle } from "lucide-react";
+import { getSurveyQuestions, submitSurvey } from "@/lib/apiLayanan";
 
-// Survey questions and options
-const SURVEY_QUESTIONS = [
-  {
-    id: 1,
-    question: "Bagaimana pendapat Saudara tentang kesesuaian persyaratan pelayanan dengan jenis pelayanannya?",
-    options: ["Tidak sesuai", "Kurang sesuai", "Sesuai", "Sangat sesuai"],
-  },
-  {
-    id: 2,
-    question: "Bagaimana pemahaman Saudara tentang kemudahan prosedur pelayanan di unit ini?",
-    options: ["Tidak mudah", "Kurang mudah", "Mudah", "Sangat mudah"],
-  },
-  {
-    id: 3,
-    question: "Bagaimana pendapat Saudara tentang kecepatan waktu dalam memberikan pelayanan?",
-    options: ["Tidak cepat", "Kurang cepat", "Cepat", "Sangat cepat"],
-  },
-  {
-    id: 4,
-    question: "Bagaimana pendapat Saudara tentang kewajaran biaya/tarif dalam pelayanan?",
-    options: ["Sangat mahal", "Cukup mahal", "Murah", "Gratis"],
-  },
-  {
-    id: 5,
-    question: "Bagaimana pendapat Saudara tentang kesesuaian produk pelayanan antara yang tercantum dalam standar pelayanan dengan hasil yang diberikan?",
-    options: ["Tidak sesuai", "Kurang sesuai", "Sesuai", "Sangat sesuai"],
-  },
-  {
-    id: 6,
-    question: "Bagaimana pendapat Saudara tentang kompetensi/kemampuan petugas dalam pelayanan?",
-    options: ["Tidak kompeten", "Kurang kompeten", "Kompeten", "Sangat kompeten"],
-  },
-  {
-    id: 7,
-    question: "Bagaimana pendapat Saudara tentang perilaku petugas dalam pelayanan terkait kesopanan dan keramahan?",
-    options: ["Tidak sopan dan ramah", "Kurang sopan dan ramah", "Sopan dan ramah", "Sangat sopan dan ramah"],
-  },
-  {
-    id: 8,
-    question: "Bagaimana pendapat Saudara tentang kualitas sarana dan prasarana?",
-    options: ["Buruk", "Cukup", "Baik", "Sangat Baik"],
-  },
-  {
-    id: 9,
-    question: "Bagaimana pendapat Saudara tentang penanganan pengaduan pengguna layanan?",
-    options: ["Tidak ada", "Ada tetapi tidak berfungsi", "Berfungsi kurang maksimal", "Dikelola dengan baik"],
-  },
-];
+// TypeScript Interfaces for Dynamic Survey
+interface SurveyTemplate {
+  id: number;
+  nama: string;
+  versi: number;
+  deskripsi: string | null;
+}
+
+interface SurveyOption {
+  id: number;
+  jawaban: string;
+  poin: number;
+  urutan: number;
+}
+
+interface SurveyQuestion {
+  id: number;
+  pertanyaan: string;
+  kode_unsur: string | null;
+  urutan: number;
+  is_required: boolean;
+  is_text_input: boolean;
+  options: SurveyOption[];
+}
+
+interface SurveyTemplateData {
+  template: SurveyTemplate;
+  questions: SurveyQuestion[];
+}
 
 interface ModalSurveyProps {
   open: boolean;
@@ -70,8 +52,12 @@ export default function ModalSurvey({
   onClose,
   onSuccess,
 }: ModalSurveyProps) {
-  // Form state
-  const [answers, setAnswers] = useState<Record<number, string>>({});
+  // Survey data from API
+  const [surveyData, setSurveyData] = useState<SurveyTemplateData | null>(null);
+  const [isLoadingSurvey, setIsLoadingSurvey] = useState(false);
+
+  // Form state - answers now store different data based on question type
+  const [answers, setAnswers] = useState<Record<number, any>>({});
   const [usia, setUsia] = useState("");
   const [jenisKelamin, setJenisKelamin] = useState("");
   const [pendidikan, setPendidikan] = useState("");
@@ -103,6 +89,13 @@ export default function ModalSurvey({
     return () => window.removeEventListener("keydown", handleEsc);
   }, [open, onClose]);
 
+  // Fetch survey questions when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchSurveyData();
+    }
+  }, [open]);
+
   // Reset form when modal opens
   useEffect(() => {
     if (open) {
@@ -117,7 +110,28 @@ export default function ModalSurvey({
     }
   }, [open]);
 
-  const handleAnswerChange = (questionId: number, answer: string) => {
+  // Fetch survey questions from API
+  const fetchSurveyData = async () => {
+    setIsLoadingSurvey(true);
+    setError(null);
+
+    try {
+      const result = await getSurveyQuestions();
+
+      if (result.success && result.data) {
+        setSurveyData(result.data);
+      } else {
+        setError(result.message || "Tidak ada template survey aktif saat ini.");
+      }
+    } catch (err: any) {
+      console.error("Error fetching survey:", err);
+      setError("Gagal memuat pertanyaan survey. Silakan coba lagi.");
+    } finally {
+      setIsLoadingSurvey(false);
+    }
+  };
+
+  const handleAnswerChange = (questionId: number, answer: any) => {
     setAnswers((prev) => ({ ...prev, [questionId]: answer }));
   };
 
@@ -125,9 +139,24 @@ export default function ModalSurvey({
     e.preventDefault();
     setError(null);
 
-    // Validation
-    if (Object.keys(answers).length < 9) {
-      setError("Mohon jawab semua pertanyaan pilihan ganda.");
+    if (!surveyData) {
+      setError("Data survey tidak tersedia.");
+      return;
+    }
+
+    // Validation - check all required questions are answered
+    const requiredQuestions = surveyData.questions.filter(q => q.is_required);
+    const unansweredRequired = requiredQuestions.filter(q => {
+      const answer = answers[q.id];
+      if (q.is_text_input) {
+        return !answer || answer.trim() === "";
+      } else {
+        return !answer || !answer.optionId;
+      }
+    });
+
+    if (unansweredRequired.length > 0) {
+      setError(`Mohon jawab semua pertanyaan yang wajib diisi (${unansweredRequired.length} pertanyaan belum dijawab).`);
       return;
     }
 
@@ -149,66 +178,37 @@ export default function ModalSurvey({
     setSubmitting(true);
 
     try {
-      // Value mapping for each answer option (1-4 scale)
-      const skalaNilai: Record<string, number> = {
-        // Question 1: Kesesuaian persyaratan
-        "Tidak sesuai": 1,
-        "Kurang sesuai": 2,
-        "Sesuai": 3,
-        "Sangat sesuai": 4,
-        // Question 2: Kemudahan prosedur
-        "Tidak mudah": 1,
-        "Kurang mudah": 2,
-        "Mudah": 3,
-        "Sangat mudah": 4,
-        // Question 3: Kecepatan waktu
-        "Tidak cepat": 1,
-        "Kurang cepat": 2,
-        "Cepat": 3,
-        "Sangat cepat": 4,
-        // Question 4: Kewajaran biaya (reversed)
-        "Sangat mahal": 1,
-        "Cukup mahal": 2,
-        "Murah": 3,
-        "Gratis": 4,
-        // Question 5: Kesesuaian produk
-        // (same as Q1)
-        // Question 6: Kompetensi petugas
-        "Tidak kompeten": 1,
-        "Kurang kompeten": 2,
-        "Kompeten": 3,
-        "Sangat kompeten": 4,
-        // Question 7: Perilaku petugas
-        "Tidak sopan dan ramah": 1,
-        "Kurang sopan dan ramah": 2,
-        "Sopan dan ramah": 3,
-        "Sangat sopan dan ramah": 4,
-        // Question 8: Kualitas sarana
-        "Buruk": 1,
-        "Cukup": 2,
-        "Baik": 3,
-        "Sangat Baik": 4,
-        // Question 9: Penanganan pengaduan
-        "Tidak ada": 1,
-        "Ada tetapi tidak berfungsi": 2,
-        "Berfungsi kurang maksimal": 3,
-        "Dikelola dengan baik": 4,
-      };
+      // Build responses array in NEW FORMAT
+      const responses: Array<{
+        question_id: number;
+        option_id?: number;
+        text_answer?: string;
+        poin?: number;
+      }> = [];
 
-      // Convert answers to JSON object format with question as key
-      const jawabanObject: Record<string, { jawaban: string; nilai: number }> = {};
+      surveyData.questions.forEach((question) => {
+        const answer = answers[question.id];
 
-      SURVEY_QUESTIONS.forEach((q) => {
-        const answer = answers[q.id] || "";
-        const nilai = skalaNilai[answer] || 0;
+        if (!answer) return; // Skip unanswered optional questions
 
-        jawabanObject[q.question] = {
-          jawaban: answer,
-          nilai: nilai,
-        };
+        if (question.is_text_input) {
+          // Text input response
+          responses.push({
+            question_id: question.id,
+            text_answer: answer as string,
+          });
+        } else {
+          // Multiple choice response
+          responses.push({
+            question_id: question.id,
+            option_id: answer.optionId,
+            poin: answer.poin,
+          });
+        }
       });
 
       const payload = {
+        survey_template_id: surveyData.template.id,
         layanan_publik_id: layananData.id,
         nama_responden: layananData.nama,
         bidang: layananData.bidang,
@@ -218,26 +218,14 @@ export default function ModalSurvey({
         pendidikan,
         pekerjaan,
         tanggal: new Date().toISOString().split("T")[0],
-        jawaban: jawabanObject,
+        responses: responses,
         saran: saran || "",
       };
 
-      const response = await fetch(
-        "http://192.168.1.5:8000/api/survey",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const result = await submitSurvey(payload);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Gagal mengirim survey");
+      if (!result.success) {
+        throw new Error(result.message || "Gagal mengirim survey");
       }
 
       setSuccess(true);
@@ -308,7 +296,23 @@ export default function ModalSurvey({
 
         {/* SCROLLABLE CONTENT */}
         <div className="flex-1 overflow-y-auto p-5">
-          {success ? (
+          {isLoadingSurvey ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+              <p className="text-gray-700">Memuat pertanyaan survey...</p>
+            </div>
+          ) : error && !surveyData ? (
+            <div className="flex flex-col items-center justify-center h-full">
+              <AlertCircle size={64} className="text-red-600 mb-4" />
+              <p className="text-red-700 mb-4 text-center">{error}</p>
+              <button
+                onClick={fetchSurveyData}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          ) : success ? (
             <div className="flex flex-col items-center justify-center h-full">
               <CheckCircle2 size={64} className="text-green-600 mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -318,7 +322,7 @@ export default function ModalSurvey({
                 Terima kasih atas partisipasi Anda. Anda sekarang dapat mengakses surat balasan.
               </p>
             </div>
-          ) : (
+          ) : surveyData ? (
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* AUTO-FILLED INFO */}
               <div className="rounded-xl p-4 bg-blue-50/70 border border-blue-200/50">
@@ -447,44 +451,79 @@ export default function ModalSurvey({
                 </div>
               </div>
 
-              {/* SURVEY QUESTIONS */}
+              {/* SURVEY QUESTIONS - DYNAMIC */}
               <div className="space-y-5">
                 <h3 className="text-sm font-semibold text-gray-900 border-b border-gray-300 pb-2">
                   Pertanyaan Survey
                 </h3>
 
-                {SURVEY_QUESTIONS.map((q, idx) => (
-                  <div key={q.id} className="space-y-2">
-                    <p className="text-sm font-medium text-gray-900">
-                      {idx + 1}. {q.question} <span className="text-red-600">*</span>
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {q.options.map((option) => (
-                        <label
-                          key={option}
+                {surveyData.questions
+                  .sort((a, b) => a.urutan - b.urutan)
+                  .map((question, idx) => (
+                    <div key={question.id} className="space-y-2">
+                      <p className="text-sm font-medium text-gray-900">
+                        {idx + 1}. {question.pertanyaan}{" "}
+                        {question.is_required && <span className="text-red-600">*</span>}
+                      </p>
+
+                      {question.is_text_input ? (
+                        // TEXT INPUT for open-ended questions
+                        <textarea
+                          value={answers[question.id] || ""}
+                          onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                          rows={4}
                           className="
-                            flex items-center gap-2 px-3 py-2
-                            rounded-lg border border-gray-300
-                            bg-white/50 hover:bg-white/80
-                            cursor-pointer transition
-                            text-sm
+                            w-full px-3 py-2 rounded-lg
+                            bg-white/70 border border-gray-300
+                            focus:ring-2 focus:ring-blue-500 focus:border-transparent
+                            text-gray-900 text-sm
                           "
-                        >
-                          <input
-                            type="radio"
-                            name={`question-${q.id}`}
-                            value={option}
-                            checked={answers[q.id] === option}
-                            onChange={() => handleAnswerChange(q.id, option)}
-                            className="text-blue-600"
-                            required
-                          />
-                          <span className="text-gray-900">{option}</span>
-                        </label>
-                      ))}
+                          placeholder="Masukkan jawaban Anda..."
+                          required={question.is_required}
+                        />
+                      ) : (
+                        // MULTIPLE CHOICE
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {question.options
+                            .sort((a, b) => a.urutan - b.urutan)
+                            .map((option) => {
+                              const isSelected =
+                                answers[question.id]?.optionId === option.id;
+
+                              return (
+                                <label
+                                  key={option.id}
+                                  className={`
+                                    flex items-center gap-2 px-3 py-2
+                                    rounded-lg border transition text-sm cursor-pointer
+                                    ${
+                                      isSelected
+                                        ? "border-blue-500 bg-blue-50/80"
+                                        : "border-gray-300 bg-white/50 hover:bg-white/80"
+                                    }
+                                  `}
+                                >
+                                  <input
+                                    type="radio"
+                                    name={`question-${question.id}`}
+                                    checked={isSelected}
+                                    onChange={() =>
+                                      handleAnswerChange(question.id, {
+                                        optionId: option.id,
+                                        poin: option.poin,
+                                      })
+                                    }
+                                    className="text-blue-600"
+                                    required={question.is_required}
+                                  />
+                                  <span className="text-gray-900">{option.jawaban}</span>
+                                </label>
+                              );
+                            })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  ))}
               </div>
 
               {/* SARAN (FREE TEXT) */}
@@ -529,6 +568,11 @@ export default function ModalSurvey({
                 {submitting ? "Mengirim..." : "Kirim Survey"}
               </button>
             </form>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full">
+              <AlertCircle size={64} className="text-gray-400 mb-4" />
+              <p className="text-gray-600">Tidak ada data survey tersedia.</p>
+            </div>
           )}
         </div>
       </motion.div>

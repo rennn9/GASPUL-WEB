@@ -43,7 +43,7 @@ const LayananKami = () => {
     openSlug ? layananPerBidang[bidangMap[openSlug]] : [];
 
   return (
-    <section id="layanan" className="py-12 bg-gray-50 scroll-mt-20">
+    <section id="layanan" className="py-12 scroll-mt-20">
       <div className="max-w-5xl mx-auto px-4">
         <h2 className="text-2xl md:text-4xl font-bold text-center text-gray-800 mb-10">
           LAYANAN KAMI
